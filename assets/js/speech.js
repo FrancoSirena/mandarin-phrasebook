@@ -4,6 +4,11 @@
  * This module is deliberately free of DOM queries — callers pass callbacks in.
  * It owns speech-synthesis state: the best cached voice, an optional
  * user-preferred voice, and change listeners for the async voice list.
+ *
+ * iOS Safari has several speechSynthesis quirks (voices load lazily, the first
+ * utterance is sometimes swallowed, and the synth can start "paused"). speak()
+ * below works around them: it resumes the synth, retries once if the utterance
+ * never starts, and re-resolves the voice on every attempt.
  */
 (function (global) {
   'use strict';
@@ -83,11 +88,6 @@
     }
   }
 
-  /**
-   * Initialise the wrapper and keep the cached voice fresh. Chrome loads the
-   * voice list asynchronously, so we re-resolve on `voiceschanged`.
-   * Returns true when TTS is supported.
-   */
   function init() {
     if (initialized || !supported()) return supported();
     initialized = true;
@@ -97,7 +97,6 @@
     if (typeof synth.addEventListener === 'function') {
       synth.addEventListener('voiceschanged', notifyVoices);
     } else {
-      // Very old WebKit/Blink exposes only the property handler.
       synth.onvoiceschanged = notifyVoices;
     }
     return true;
@@ -105,6 +104,11 @@
 
   function cancel() {
     if (supported()) window.speechSynthesis.cancel();
+  }
+
+  function resume() {
+    if (!supported()) return;
+    try { window.speechSynthesis.resume(); } catch (e) { /* ignore */ }
   }
 
   function setPreferredVoiceName(name) { preferredVoiceName = name || null; }
@@ -115,15 +119,24 @@
     if (typeof cb === 'function') voiceListeners.push(cb);
   }
 
+  function buildUtterance(text, rate) {
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = rate;
+    utterance.pitch = 1.0;
+
+    // Re-resolve every attempt: on iOS the voice list may only have become
+    // available after the first (ignored) utterance.
+    var voice = findVoiceByName(preferredVoiceName) || cachedVoice || pickVoice();
+    if (voice) utterance.voice = voice;
+
+    return utterance;
+  }
+
   /**
-   * Speak `text` in Chinese. Always cancels any in-flight utterance first.
+   * Speak `text` in Chinese. Cancels any in-flight utterance first.
    *
-   * options: {
-   *   rate: number   (default 0.85; callers pass the user-chosen speed)
-   *   onStart: fn()  — fired when the utterance starts
-   *   onEnd: fn()    — fired when the utterance finishes
-   *   onError: fn(e) — fired on synthesis error
-   * }
+   * options: { rate, onStart, onEnd, onError }
    */
   function speak(text, options) {
     if (!supported()) {
@@ -135,23 +148,61 @@
     var rate = typeof opts.rate === 'number' ? opts.rate : 0.85;
 
     cancel();
+    resume();
 
-    var utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'zh-CN';
-    utterance.rate = rate;
-    utterance.pitch = 1.0;
+    var started = false;
+    var settled = false;
+    var attempts = 0;
+    var watchdog = null;
 
-    // User-chosen voice first, then the best-ranked Chinese voice, then the
-    // browser default (which still honours lang="zh-CN").
-    var voice = findVoiceByName(preferredVoiceName) || cachedVoice || pickVoice();
-    if (voice) utterance.voice = voice;
+    function clearWatchdog() {
+      if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+    }
 
-    utterance.onstart = function () { if (opts.onStart) opts.onStart(); };
-    utterance.onend = function () { if (opts.onEnd) opts.onEnd(); };
-    utterance.onerror = function (event) { if (opts.onError) opts.onError(event); };
+    function finish(err) {
+      if (settled) return;
+      settled = true;
+      clearWatchdog();
+      if (err) { if (opts.onError) opts.onError(err); }
+      else { if (opts.onEnd) opts.onEnd(); }
+    }
 
-    window.speechSynthesis.speak(utterance);
-    return utterance;
+    function attempt() {
+      attempts += 1;
+      var utterance = buildUtterance(text, rate);
+
+      utterance.onstart = function () {
+        started = true;
+        clearWatchdog();
+        if (opts.onStart) opts.onStart();
+      };
+      utterance.onend = function () { finish(null); };
+      utterance.onerror = function (event) { finish(event); };
+
+      try {
+        window.speechSynthesis.speak(utterance);
+        resume(); // iOS sometimes starts in a paused state
+      } catch (e) {
+        finish(e);
+        return;
+      }
+
+      clearWatchdog();
+      // If the utterance never starts (a known WebKit/iOS quirk), retry once.
+      watchdog = setTimeout(function () {
+        if (settled || started) return;
+        if (attempts < 2) {
+          cancel();
+          resume();
+          attempt();
+        } else {
+          finish(new Error('TTS did not start'));
+        }
+      }, 900);
+    }
+
+    attempt();
+    return null;
   }
 
   ns.speech = {
