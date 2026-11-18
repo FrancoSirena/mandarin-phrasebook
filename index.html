@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="A free, static Mandarin travel phrasebook for Chengdu, Shangri-La (Diqing), and Lijiang. Listen to phrases aloud, then practise with in-browser speech recognition and get an instant pronunciation score. No accounts, no API keys.">
+  <title>Mandarin Travel Phrasebook</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="site-header">
+      <h1>Mandarin Travel Phrasebook</h1>
+      <p class="subtitle">Practise essential Mandarin for a trip to Chengdu, Shangri-La (Diqing), and Lijiang. Tap <strong>🔊 Speak</strong> to hear the model, then <strong>🎤 Practise</strong> and repeat it back — your browser listens, transcribes, and scores how close you were.</p>
+    </header>
+
+    <div class="support-notices" id="support-notices" hidden></div>
+
+    <section class="how-to" aria-label="How practising works">
+      <p><strong>🎙️ How practising works:</strong> speech recognition runs in your browser and works best in <strong>Chrome or Edge on desktop</strong> (it needs a microphone and an internet connection). For the best result, tap Speak first and listen carefully, then tap Practise and repeat the phrase.</p>
+    </section>
+
+    <div class="controls">
+      <label class="search">
+        <span class="visually-hidden">Search phrases</span>
+        <input type="search" id="search" placeholder="Search Chinese, pinyin, or English…" autocomplete="off">
+      </label>
+      <label class="slow-toggle">
+        <input type="checkbox" id="slow-toggle">
+        <span>🐢 Slow replay</span>
+      </label>
+    </div>
+
+    <main>
+      <div id="app"></div>
+      <div id="no-matches" class="no-matches" hidden>No phrases match your search. Try a different word.</div>
+    </main>
+
+    <footer class="site-footer">
+      <p>Mandarin Travel Phrasebook · 100% static · no accounts, no tracking, no API keys. All speech processing happens in your browser.</p>
+    </footer>
+  </div>
+
+  <!--
+    Loaded as classic scripts (in dependency order) so the site also works when
+    index.html is opened directly from disk via file://. ES module imports are
+    blocked by CORS over file://. See README → "Decisions & trade-offs".
+  -->
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/speech.js"></script>
+  <script src="assets/js/practice.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

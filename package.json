@@ -1,0 +1,10 @@
+{
+  "name": "mandarin-phrasebook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A free, 100% static Mandarin travel phrasebook with in-browser text-to-speech and speech-recognition practice for Chengdu, Shangri-La, and Lijiang.",
+  "scripts": {
+    "serve": "npx --yes serve ."
+  },
+  "license": "MIT"
+}

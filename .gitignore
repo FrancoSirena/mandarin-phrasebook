@@ -1,0 +1,12 @@
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Node (only used for the optional local dev server)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Local editor settings
+.vscode/
+.idea/
