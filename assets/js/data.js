@@ -39,6 +39,12 @@
       emoji: '🍽️'
     },
     {
+      id: 'hotel',
+      title: 'Hotel Check-in',
+      description: 'Checking in and out, room requests, Wi-Fi, and little problems.',
+      emoji: '🏨'
+    },
+    {
       id: 'chengdu',
       title: 'Chengdu / Sichuan',
       description: 'Try the famous mápó dòufu — the soul of Sichuan cuisine.',
@@ -119,6 +125,32 @@
       { zh: '我吃素', pinyin: 'wǒ chī sù', phonetic: 'waw chr soo', en: "I'm vegetarian" },
       { zh: '请不要放肉', pinyin: 'qǐng bùyào fàng ròu', phonetic: 'ching boo-yow fahng roh', en: 'Please no meat' },
       { zh: '洗手间在哪儿？', pinyin: 'xǐshǒujiān zài nǎr?', phonetic: 'shee-show-jyehn dzai nar', en: 'Where is the restroom?' }
+    ],
+
+    // Added on request — hotel check-in phrases (review with a native speaker).
+    hotel: [
+      { zh: '我有预订', pinyin: 'wǒ yǒu yùdìng', phonetic: 'waw yo yoo-ding', en: 'I have a reservation' },
+      { zh: '我没有预订', pinyin: 'wǒ méiyǒu yùdìng', phonetic: 'waw may-yo yoo-ding', en: "I don't have a reservation" },
+      { zh: '有没有空房间？', pinyin: 'yǒu méiyǒu kòng fángjiān?', phonetic: 'yo may-yo kong fahng-jyehn', en: 'Do you have any rooms available?' },
+      { zh: '我想办理入住', pinyin: 'wǒ xiǎng bànlǐ rùzhù', phonetic: 'waw shyahng bahn-lee roo-joo', en: "I'd like to check in" },
+      { zh: '我想退房', pinyin: 'wǒ xiǎng tuìfáng', phonetic: 'waw shyahng tway-fahng', en: "I'd like to check out" },
+      { zh: '我的名字是…', pinyin: 'wǒ de míngzi shì …', phonetic: 'waw duh ming-dzuh shr …', en: 'My name is…', note: 'Fill in your name' },
+      { zh: '有单人间吗？', pinyin: 'yǒu dānrénjiān ma?', phonetic: 'yo dahn-ren-jyehn mah', en: 'Do you have a single room?' },
+      { zh: '有双人间吗？', pinyin: 'yǒu shuāngrénjiān ma?', phonetic: 'yo shwahng-ren-jyehn mah', en: 'Do you have a double room?' },
+      { zh: '一晚多少钱？', pinyin: 'yì wǎn duōshao qián?', phonetic: 'ee wahn dwaw-shaow chyehn', en: 'How much per night?' },
+      { zh: '含早餐吗？', pinyin: 'hán zǎocān ma?', phonetic: 'hahn dzaow-tsahn mah', en: 'Does it include breakfast?' },
+      { zh: '早餐几点开始？', pinyin: 'zǎocān jǐ diǎn kāishǐ?', phonetic: 'dzaow-tsahn jee dyehn kie-shr', en: 'What time is breakfast?' },
+      { zh: '有无线网络吗？', pinyin: 'yǒu wúxiàn wǎngluò ma?', phonetic: 'yo woo-shyehn wahng-lwaw mah', en: 'Is there Wi-Fi?' },
+      { zh: '无线网络密码是多少？', pinyin: 'wúxiàn wǎngluò mìmǎ shì duōshao?', phonetic: 'woo-shyehn wahng-lwaw mee-mah shr dwaw-shaow', en: "What's the Wi-Fi password?" },
+      { zh: '我的房间号是多少？', pinyin: 'wǒ de fángjiān hào shì duōshao?', phonetic: 'waw duh fahng-jyehn how shr dwaw-shaow', en: "What's my room number?" },
+      { zh: '请给我房卡', pinyin: 'qǐng gěi wǒ fángkǎ', phonetic: 'ching gay waw fahng-kah', en: 'Please give me the room key card', note: '房卡 = room key card' },
+      { zh: '空调坏了', pinyin: 'kōngtiáo huài le', phonetic: 'kong-tyaow hwy luh', en: 'The air conditioning is broken' },
+      { zh: '没有热水', pinyin: 'méiyǒu rèshuǐ', phonetic: 'may-yo ruh-shway', en: "There's no hot water" },
+      { zh: '可以帮我拿行李吗？', pinyin: 'kěyǐ bāng wǒ ná xíngli ma?', phonetic: 'kuh-yee bahng waw nah shing-lee mah', en: 'Can you help me with my luggage?' },
+      { zh: '可以寄存行李吗？', pinyin: 'kěyǐ jìcún xíngli ma?', phonetic: 'kuh-yee jee-tswun shing-lee mah', en: 'Can I store my luggage?' },
+      { zh: '请给我一张发票', pinyin: 'qǐng gěi wǒ yì zhāng fāpiào', phonetic: 'ching gay waw ee jahng fah-pyaow', en: 'Please give me a receipt (fapiao)', note: '发票 = official tax invoice' },
+      { zh: '退房时间是几点？', pinyin: 'tuìfáng shíjiān shì jǐ diǎn?', phonetic: 'tway-fahng shr-jyehn shr jee dyehn', en: 'What time is checkout?' },
+      { zh: '我明天走', pinyin: 'wǒ míngtiān zǒu', phonetic: 'waw ming-tyehn dzoh', en: "I'm leaving tomorrow" }
     ],
 
     chengdu: [
