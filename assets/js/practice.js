@@ -90,6 +90,7 @@
    * options: {
    *   onStart: fn()                      — recognition started
    *   onResult: fn(heard, alternatives)  — final transcript + alternates
+   *   onAudio: fn(blob)                  — raw recording (when capture succeeds)
    *   onError: fn({ type })              — raw error type string
    *   onEnd: fn({ hadResult, aborted })  — always fired, the single cleanup hook
    * }
@@ -107,10 +108,55 @@
 
     var recognition = createRecogniser();
     var id = nextId++;
-    var session = { recognition: recognition, aborted: false };
+    var session = { recognition: recognition, aborted: false, finished: false };
     activeRecognisers.set(id, session);
 
     var gotResult = false;
+
+    // --- optional audio capture, so the user can replay what they said ---
+    var micStream = null;
+    var recorder = null;
+    var audioChunks = [];
+
+    function releaseMic() {
+      if (micStream) {
+        micStream.getTracks().forEach(function (t) { t.stop(); });
+        micStream = null;
+      }
+    }
+
+    function stopAudioCapture() {
+      if (recorder && recorder.state !== 'inactive') {
+        try { recorder.stop(); } catch (e) { releaseMic(); }
+      } else {
+        releaseMic();
+      }
+    }
+
+    // Record in parallel with recognition (they share the same mic permission).
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function' &&
+        typeof window.MediaRecorder === 'function') {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+        if (session.finished) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+        micStream = stream;
+        var rec;
+        try {
+          rec = new MediaRecorder(stream);
+        } catch (e) {
+          releaseMic();
+          return;
+        }
+        recorder = rec;
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) audioChunks.push(e.data); };
+        rec.onstop = function () {
+          if (audioChunks.length && options && options.onAudio) {
+            options.onAudio(new Blob(audioChunks, { type: rec.mimeType || 'audio/webm' }));
+          }
+          releaseMic();
+        };
+        try { rec.start(250); } catch (e) { releaseMic(); }
+      }).catch(function () { /* mic capture failed; recognition still proceeds */ });
+    }
 
     recognition.onstart = function () {
       if (options && options.onStart) options.onStart();
@@ -135,7 +181,9 @@
     // onend is the single place we tear down state, whether we got a result,
     // an error, an abort, or the user stopped early. Delete from the map here.
     recognition.onend = function () {
+      session.finished = true;
       activeRecognisers.delete(id);
+      stopAudioCapture();
       if (options && options.onEnd) {
         options.onEnd({ hadResult: gotResult, aborted: session.aborted });
       }
@@ -144,7 +192,9 @@
     try {
       recognition.start();
     } catch (e) {
+      session.finished = true;
       activeRecognisers.delete(id);
+      stopAudioCapture();
       if (options && options.onError) options.onError({ type: 'start-failed' });
       return null;
     }

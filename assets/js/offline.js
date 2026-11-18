@@ -77,6 +77,7 @@
    * options: {
    *   onStart: fn()                       — mic is live and recording
    *   onTranscribing: fn()                — recording stopped, model running
+   *   onAudio: fn(blob)                   — the raw recording, for playback
    *   onProgress: fn(fraction 0..1)       — model download/load progress
    *   onResult: fn(text)                  — transcript
    *   onError: fn({ type })               — error type string
@@ -151,6 +152,7 @@
         if (session.done) return;
         var blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
         if (opts.onTranscribing) opts.onTranscribing();
+        if (opts.onAudio) opts.onAudio(blob);
 
         getTranscriber(opts.onProgress).then(function (transcriber) {
           var url = URL.createObjectURL(blob);

@@ -20,6 +20,7 @@
   var MIN_SPEED = 0.5;
   var MAX_SPEED = 1.0;
   var OFFLINE_KEY = 'mtp.offline';
+  var VOICE_KEY = 'mtp.voice';
 
   var state = {
     speed: readSpeedPref(),
@@ -63,6 +64,17 @@
 
   function writeOfflinePref(value) {
     try { localStorage.setItem(OFFLINE_KEY, value ? '1' : '0'); } catch (e) { /* private mode */ }
+  }
+
+  function readVoicePref() {
+    try { return localStorage.getItem(VOICE_KEY) || null; } catch (e) { return null; }
+  }
+
+  function writeVoicePref(name) {
+    try {
+      if (name) localStorage.setItem(VOICE_KEY, name);
+      else localStorage.removeItem(VOICE_KEY);
+    } catch (e) { /* private mode */ }
   }
 
   /* ----------------------------- support notices ----------------------------- */
@@ -159,7 +171,25 @@
     resultBox.className = 'result-box is-visible result-box--' + tone;
   }
 
-  function renderResult(resultBox, phrase, heard, score) {
+  function makeReplayButton(blob) {
+    var url = URL.createObjectURL(blob);
+    var btn = el('button', 'btn btn--replay');
+    btn.type = 'button';
+    btn.textContent = '🔊 Hear what you said';
+    btn.setAttribute('aria-label', 'Play back your recording');
+    btn.addEventListener('click', function () {
+      var audio = new Audio(url);
+      audio.play().catch(function () { /* non-fatal */ });
+    });
+    return btn;
+  }
+
+  function appendReplay(resultBox, blob) {
+    var inner = resultBox.querySelector('.result-box__inner');
+    inner.appendChild(makeReplayButton(blob));
+  }
+
+  function renderResult(resultBox, phrase, heard, score, audioBlob) {
     var band = bandFor(score);
     showResultBox(resultBox, band.tone);
 
@@ -184,6 +214,8 @@
       targetEl.textContent = 'Target: ' + phrase.zh + ' (' + phrase.pinyin + ')';
       inner.appendChild(targetEl);
     }
+
+    if (audioBlob) appendReplay(resultBox, audioBlob);
   }
 
   function renderError(resultBox, type) {
@@ -230,14 +262,23 @@
 
   function startOnline(phrase, practiceBtn, resultBox) {
     var settled = false;
+    var failedOver = false;
+    var audioBlob = null;
 
     var handle = practice.start({
       onStart: function () { /* button already in listening state */ },
       onResult: function (heard, alternatives) {
         if (settled) return;
         settled = true;
-        renderResult(resultBox, phrase, heard, practice.score(phrase.zh, heard));
+        renderResult(resultBox, phrase, heard, practice.score(phrase.zh, heard), audioBlob);
         resetBtn(practiceBtn);
+      },
+      onAudio: function (blob) {
+        audioBlob = blob;
+        // Online: the recording finalises just after the result, so append now.
+        if (settled && !failedOver && resultBox.classList.contains('is-visible')) {
+          appendReplay(resultBox, blob);
+        }
       },
       onError: function (err) {
         if (settled) return;
@@ -245,6 +286,7 @@
         if (t === 'network' || t === 'unsupported' || t === 'service-not-allowed') {
           // Online service unreachable (e.g. Google blocked) → use local model.
           settled = true;
+          failedOver = true;
           setOfflinePreference(true);
           startOffline(phrase, practiceBtn, resultBox);
           return;
@@ -267,9 +309,13 @@
 
   function startOffline(phrase, practiceBtn, resultBox) {
     var settled = false;
+    var audioBlob = null;
 
     var handle = offline.start({
       onStart: function () { /* button already in listening state */ },
+      onAudio: function (blob) {
+        audioBlob = blob;
+      },
       onTranscribing: function () {
         if (settled) return;
         setProcessing(practiceBtn, true);
@@ -294,7 +340,7 @@
       onResult: function (heard) {
         if (settled) return;
         settled = true;
-        renderResult(resultBox, phrase, heard, practice.score(phrase.zh, heard));
+        renderResult(resultBox, phrase, heard, practice.score(phrase.zh, heard), audioBlob);
         resetBtn(practiceBtn);
       },
       onError: function (err) {
@@ -475,6 +521,33 @@
     document.getElementById('no-matches').hidden = visibleCount > 0;
   }
 
+  function populateVoicePicker() {
+    var select = document.getElementById('voice-picker');
+    if (!select) return;
+
+    var voices = speech.getChineseVoices();
+    var current = speech.getPreferredVoiceName() || readVoicePref();
+
+    select.replaceChildren();
+
+    var auto = document.createElement('option');
+    auto.value = '';
+    auto.textContent = 'Auto (best)';
+    select.appendChild(auto);
+
+    for (var i = 0; i < voices.length; i++) {
+      var v = voices[i];
+      var opt = document.createElement('option');
+      opt.value = v.name;
+      var lang = (v.lang || '').toLowerCase().replace('_', '-');
+      opt.textContent = v.name + (lang !== 'zh-cn' ? ' (' + v.lang + ')' : '');
+      select.appendChild(opt);
+    }
+
+    select.value = current || '';
+    select.disabled = voices.length === 0;
+  }
+
   /* ----------------------------- bootstrap ----------------------------- */
 
   function init() {
@@ -502,6 +575,17 @@
     offlineToggle.addEventListener('change', function () {
       state.offline = offlineToggle.checked;
       writeOfflinePref(state.offline);
+    });
+
+    speech.setPreferredVoiceName(readVoicePref());
+    populateVoicePicker();
+    speech.onVoicesChanged(populateVoicePicker);
+
+    var voicePicker = document.getElementById('voice-picker');
+    voicePicker.addEventListener('change', function () {
+      var name = voicePicker.value || null;
+      speech.setPreferredVoiceName(name);
+      writeVoicePref(name);
     });
 
     if ('serviceWorker' in navigator) {

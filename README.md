@@ -23,7 +23,8 @@ processing happens in your browser using the Web Speech API.
   Chengdu / Sichuan, Shangri-La (Diqing), Lijiang (Naxi Cuisine), and Shenzhen
   Tech Market (Huaqiangbei).
 - **Speak** with automatic best-Chinese-voice selection (prefers `zh-CN` over
-  `zh-TW`/`zh-HK`, re-resolves when voices load asynchronously).
+  `zh-TW`/`zh-HK`, re-resolves when voices load asynchronously), plus a **🔊
+  Voice picker** so you can choose the least-robotic voice on your device.
 - **🐢 Speed slider** (0.5×–1.0×, default 0.8×) to slow the speech down to your
   pace — persisted in `localStorage`.
 - **"Sounds like" phonetic line** under each pinyin (e.g. 你好 → _nee how_), an
@@ -33,6 +34,8 @@ processing happens in your browser using the Web Speech API.
 - **📴 Offline recognition** — a local Whisper model that runs entirely in your
   browser: no Google, no VPN, and it works offline after a one-time ~40 MB
   download. It auto-falls back when the online engine is unreachable.
+- **🔊 Hear what you said** — after a practise attempt you can replay your own
+  recording to compare it against the model voice.
 - **Inline, non-blocking notices** when either speech API is unsupported —
   never an `alert()`.
 - **Live search** that filters all cards across categories by Chinese, pinyin,
