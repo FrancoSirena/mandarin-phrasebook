@@ -147,6 +147,14 @@
         return 'Nothing was detected. Tap 🔊 Speak first to hear the model, then try again and speak clearly.';
       case 'audio-capture':
         return 'No microphone was found. Connect a microphone and try again.';
+      case 'language-not-supported':
+        return "This browser can't recognise Chinese speech. On iPhone, enable Dictation and add a Chinese keyboard — or turn on the 📴 Offline toggle.";
+      case 'bad-grammar':
+        return "The recogniser couldn't process that. Try again, or turn on the 📴 Offline toggle.";
+      case 'start-failed':
+        return "The microphone couldn't start. Tap Practise again.";
+      case 'aborted':
+        return 'Listening was interrupted.';
       case 'network':
         return "Speech recognition couldn't reach the browser's speech service. Switching to the local (offline) model.";
       case 'insecure-context':
@@ -283,8 +291,10 @@
       onError: function (err) {
         if (settled) return;
         var t = err && err.type;
-        if (t === 'network' || t === 'unsupported' || t === 'service-not-allowed') {
-          // Online service unreachable (e.g. Google blocked) → use local model.
+        if (t === 'aborted') return; // handled by onEnd
+        // Fall back to the local Whisper model for ANY online failure except
+        // mic-permission, no-mic, and no-speech (where offline won't help).
+        if (t !== 'not-allowed' && t !== 'audio-capture' && t !== 'no-speech') {
           settled = true;
           failedOver = true;
           setOfflinePreference(true);
