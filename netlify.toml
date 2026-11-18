@@ -1,0 +1,5 @@
+# Netlify configuration — this is a plain static site, so there is no build
+# command and the publish directory is the repo root.
+[build]
+  command = ""
+  publish = "."

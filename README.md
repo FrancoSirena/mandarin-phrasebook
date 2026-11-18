@@ -2,7 +2,8 @@
 
 A free, 100% static, single-page website that helps English-speaking travellers
 practise Mandarin before and during a trip to **Chengdu**, **Shangri-La
-(Diqing)**, and **Lijiang**.
+(Diqing)**, and **Lijiang** — plus a bonus **Shenzhen / Huaqiangbei**
+tech-market category.
 
 Every phrase has two actions:
 
@@ -18,8 +19,9 @@ processing happens in your browser using the Web Speech API.
 
 ## Features
 
-- **45 phrases** across five categories: Respectful Basics, At the Restaurant,
-  Chengdu / Sichuan, Shangri-La (Diqing), and Lijiang (Naxi Cuisine).
+- **66 phrases** across six categories: Respectful Basics, At the Restaurant,
+  Chengdu / Sichuan, Shangri-La (Diqing), Lijiang (Naxi Cuisine), and Shenzhen
+  Tech Market (Huaqiangbei).
 - **Speak** with automatic best-Chinese-voice selection (prefers `zh-CN` over
   `zh-TW`/`zh-HK`, re-resolves when voices load asynchronously).
 - **"🐢 Slow replay"** toggle that drops the speaking rate to 0.6 and is
@@ -38,6 +40,12 @@ processing happens in your browser using the Web Speech API.
 - **No layout shift** when results appear (animated height), and zero
   third-party network requests at runtime.
 - **Print-friendly** stylesheet (`@media print`) for exporting the phrase list.
+
+> **Note on the Shenzhen category.** The 21 Shenzhen / Huaqiangbei phrases were
+> added on request for a separate mini-PC-buying playbook and are **not** part
+> of the original verbatim dataset. They follow the same `{ zh, pinyin, en,
+> note }` shape, but please have a native speaker review them before relying on
+> them.
 
 ### Screenshots
 
