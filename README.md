@@ -101,21 +101,25 @@ Then open the printed URL (usually `http://localhost:3000`).
 
 ## Deployment
 
-### GitHub Pages (default)
+### Netlify (recommended)
 
-1. Push this repository to GitHub.
-2. Ensure your default branch is `main` (or edit `.github/workflows/deploy.yml`).
-3. Go to **Settings → Pages** and set the source to **GitHub Actions**.
+The repo includes a `netlify.toml`, so Netlify already knows there is **no build
+step** and the publish directory is the repo root.
 
-The workflow at `.github/workflows/deploy.yml` runs on every push to `main`,
-uploads the repo root as the Pages artifact, and deploys it. It uses the
-required `contents: read`, `pages: write`, and `id-token: write` permissions and
-a `pages` concurrency group.
+1. Push the repo to GitHub (already done).
+2. Go to **https://app.netlify.com → Add new site → Import an existing project**
+   and pick the GitHub repo.
+3. Leave **Build command** empty and **Publish directory** as `.` — Netlify reads
+   these from `netlify.toml` automatically.
+4. Click **Deploy site**.
 
-All asset paths are **relative** (no leading `/`), so the site also works from a
-project subpath such as `https://<user>.github.io/mandarin-phrasebook/`.
+Every push to `main` then redeploys automatically. For a quick throwaway deploy,
+you can also drag the project folder onto **https://app.netlify.com/drop**.
 
-### Cloudflare Pages / Netlify / Vercel
+All asset paths are **relative** (no leading `/`), so the site works from any
+subpath or custom domain.
+
+### Cloudflare Pages / Vercel / any static host
 
 Point the platform at the repo root. There is no build command; the output
 directory is the repo root (`.`).
@@ -186,7 +190,7 @@ mandarin-phrasebook/
 │       ├── practice.js         # online recognition wrapper + scoring
 │       └── offline.js          # local Whisper recognition wrapper
 ├── sw.js                       # service worker (offline caching)
-├── .github/workflows/deploy.yml
+├── netlify.toml                # Netlify config (no build, publish root)
 ├── .gitignore
 ├── LICENSE                     # MIT
 ├── package.json                # optional: `npm run serve` convenience script
