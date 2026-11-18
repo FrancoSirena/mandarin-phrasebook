@@ -8,7 +8,7 @@ tech-market category.
 Every phrase has two actions:
 
 - **🔊 Speak** — reads the Chinese aloud with the browser's built-in
-  text-to-speech (`zh-CN`, rate ~0.85, with an optional "🐢 Slow replay" toggle).
+  text-to-speech (`zh-CN`, with an adjustable 🐢 speed slider from 0.5× to 1.0×).
 - **🎤 Practise** — records your voice via the microphone, transcribes what you
   said, and scores how close you were to the target phrase.
 
@@ -24,8 +24,10 @@ processing happens in your browser using the Web Speech API.
   Tech Market (Huaqiangbei).
 - **Speak** with automatic best-Chinese-voice selection (prefers `zh-CN` over
   `zh-TW`/`zh-HK`, re-resolves when voices load asynchronously).
-- **"🐢 Slow replay"** toggle that drops the speaking rate to 0.6 and is
-  persisted in `localStorage`.
+- **🐢 Speed slider** (0.5×–1.0×, default 0.8×) to slow the speech down to your
+  pace — persisted in `localStorage`.
+- **"Sounds like" phonetic line** under each pinyin (e.g. 你好 → _nee how_), an
+  English-friendly pronunciation hint added on request.
 - **Practise** with live microphone transcription and an approximate
   character-overlap score (0–100) plus friendly feedback bands.
 - **Inline, non-blocking notices** when either speech API is unsupported —
@@ -43,9 +45,9 @@ processing happens in your browser using the Web Speech API.
 
 > **Note on the Shenzhen category.** The 21 Shenzhen / Huaqiangbei phrases were
 > added on request for a separate mini-PC-buying playbook and are **not** part
-> of the original verbatim dataset. They follow the same `{ zh, pinyin, en,
-> note }` shape, but please have a native speaker review them before relying on
-> them.
+> of the original verbatim dataset. They follow the same `{ zh, pinyin,
+> phonetic, en, note }` shape, but please have a native speaker review them
+> before relying on them.
 
 ### Screenshots
 
@@ -168,7 +170,7 @@ mandarin-phrasebook/
 │   ├── css/styles.css          # all styling, light/dark themes, print
 │   └── js/
 │       ├── app.js              # bootstrap, rendering, wiring (entry)
-│       ├── data.js             # CATEGORIES + PHRASES (45 phrases)
+│       ├── data.js             # CATEGORIES + PHRASES (66 phrases)
 │       ├── speech.js           # TTS wrapper (voice selection, speak/cancel)
 │       └── practice.js         # recognition wrapper + scoring
 ├── .github/workflows/deploy.yml

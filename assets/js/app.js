@@ -2,7 +2,7 @@
  * Mandarin Travel Phrasebook — entry module.
  *
  * Bootstraps the page: renders categories/cards, wires the Speak and Practise
- * buttons, the live search filter, the slow-replay toggle, and the support
+ * buttons, the live search filter, the speed slider, and the support
  * notices. This is the only module that touches the DOM.
  */
 (function (global) {
@@ -14,10 +14,13 @@
   var speech = ns.speech;
   var practice = ns.practice;
 
-  var SLOW_KEY = 'mtp.slow';
+  var SPEED_KEY = 'mtp.speed';
+  var DEFAULT_SPEED = 0.8;
+  var MIN_SPEED = 0.5;
+  var MAX_SPEED = 1.0;
 
   var state = {
-    slow: readSlowPref(),
+    speed: readSpeedPref(),
     activePractice: null
   };
 
@@ -35,12 +38,20 @@
 
   // IMPORTANT: all user-derived text (speech transcripts) is inserted with
   // textContent — never innerHTML — so it cannot inject markup.
-  function readSlowPref() {
-    try { return localStorage.getItem(SLOW_KEY) === '1'; } catch (e) { return false; }
+  function clampSpeed(v) {
+    return Math.max(MIN_SPEED, Math.min(MAX_SPEED, v));
   }
 
-  function writeSlowPref(value) {
-    try { localStorage.setItem(SLOW_KEY, value ? '1' : '0'); } catch (e) { /* private mode */ }
+  function readSpeedPref() {
+    try {
+      var v = parseFloat(localStorage.getItem(SPEED_KEY));
+      if (isFinite(v)) return clampSpeed(v);
+    } catch (e) { /* ignore */ }
+    return DEFAULT_SPEED;
+  }
+
+  function writeSpeedPref(value) {
+    try { localStorage.setItem(SPEED_KEY, String(value)); } catch (e) { /* private mode */ }
   }
 
   /* ----------------------------- support notices ----------------------------- */
@@ -105,7 +116,7 @@
       case 'audio-capture':
         return 'No microphone was found. Connect a microphone and try again.';
       case 'network':
-        return 'Speech recognition needs an internet connection. Connect and try again.';
+        return "Speech recognition couldn't reach the browser's speech service. Chrome sends your audio to Google's servers, which are blocked in some regions and on non-https pages. Try Edge or Safari, use a VPN, and serve the page over https://.";
       case 'unsupported':
         return 'Speech recognition is not supported in this browser. Use Chrome or Edge on desktop for the best results.';
       default:
@@ -227,6 +238,13 @@
 
     text.appendChild(zh);
     text.appendChild(pinyin);
+
+    if (phrase.phonetic) {
+      var phonetic = el('div', 'phrase-card__phonetic');
+      phonetic.textContent = phrase.phonetic;
+      text.appendChild(phonetic);
+    }
+
     text.appendChild(en);
 
     if (phrase.note) {
@@ -269,7 +287,7 @@
     // Speak: cancel any in-flight utterance, then speak this phrase.
     speakBtn.addEventListener('click', function () {
       speech.speak(phrase.zh, {
-        rate: state.slow ? 0.6 : 0.85,
+        rate: state.speed,
         onStart: function () { setSpeaking(speakBtn, true); },
         onEnd: function () { setSpeaking(speakBtn, false); },
         onError: function () { setSpeaking(speakBtn, false); }
@@ -288,7 +306,7 @@
     return {
       element: card,
       practiceBtn: practiceBtn,
-      haystack: (phrase.zh + ' ' + phrase.pinyin + ' ' + phrase.en + ' ' + (phrase.note || '')).toLowerCase()
+      haystack: (phrase.zh + ' ' + phrase.pinyin + ' ' + (phrase.phonetic || '') + ' ' + phrase.en + ' ' + (phrase.note || '')).toLowerCase()
     };
   }
 
@@ -365,11 +383,14 @@
       applySearch(searchInput.value);
     });
 
-    var slowToggle = document.getElementById('slow-toggle');
-    slowToggle.checked = state.slow;
-    slowToggle.addEventListener('change', function () {
-      state.slow = slowToggle.checked;
-      writeSlowPref(state.slow);
+    var speedSlider = document.getElementById('speed-slider');
+    var speedValue = document.getElementById('speed-value');
+    speedSlider.value = String(state.speed);
+    speedValue.textContent = state.speed.toFixed(1) + '×';
+    speedSlider.addEventListener('input', function () {
+      state.speed = clampSpeed(parseFloat(speedSlider.value));
+      writeSpeedPref(state.speed);
+      speedValue.textContent = state.speed.toFixed(1) + '×';
     });
   }
 
