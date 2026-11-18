@@ -27,6 +27,12 @@
       emoji: '👋'
     },
     {
+      id: 'everyday',
+      title: 'Everyday Essentials',
+      description: 'Introductions, polite requests, and the phrases that keep a conversation going.',
+      emoji: '💬'
+    },
+    {
       id: 'restaurant',
       title: 'At the Restaurant',
       description: 'Essential phrases for ordering, dietary needs, and paying.',
@@ -73,6 +79,31 @@
       { zh: '您先请', pinyin: 'nín xiān qǐng', phonetic: 'neen shyehn ching', en: 'After you / please go first' },
       { zh: '辛苦了', pinyin: 'xīnkǔ le', phonetic: 'sheen-koo luh', en: 'Thanks for your hard work', note: 'Warm and respectful — great for hosts and drivers' },
       { zh: '再见', pinyin: 'zàijiàn', phonetic: 'dzai-jyehn', en: 'Goodbye' }
+    ],
+
+    // Added on request — general-use & politeness phrases (review with a native speaker).
+    everyday: [
+      { zh: '很高兴认识你', pinyin: 'hěn gāoxìng rènshi nǐ', phonetic: 'hun gaow-shing run-shr nee', en: 'Nice to meet you' },
+      { zh: '你叫什么名字？', pinyin: 'nǐ jiào shénme míngzi?', phonetic: 'nee jyaow shun-muh ming-dzuh', en: "What's your name?" },
+      { zh: '我叫…', pinyin: 'wǒ jiào …', phonetic: 'waw jyaow …', en: 'My name is…', note: 'Fill in your name after 我叫' },
+      { zh: '我是外国人', pinyin: 'wǒ shì wàiguórén', phonetic: 'waw shr why-gwaw-ren', en: "I'm a foreigner" },
+      { zh: '我是意大利人', pinyin: 'wǒ shì Yìdàlì rén', phonetic: 'waw shr ee-dah-lee ren', en: "I'm Italian" },
+      { zh: '请慢一点说', pinyin: 'qǐng màn yìdiǎn shuō', phonetic: 'ching mahn ee-dyehn shwaw', en: 'Please speak a bit slower' },
+      { zh: '请再说一遍', pinyin: 'qǐng zài shuō yí biàn', phonetic: 'ching dzai shwaw ee byehn', en: 'Please say that again' },
+      { zh: '你会说英语吗？', pinyin: 'nǐ huì shuō Yīngyǔ ma?', phonetic: 'nee hway shwaw ying-yoo mah', en: 'Do you speak English?' },
+      { zh: '我不会说中文', pinyin: 'wǒ bú huì shuō Zhōngwén', phonetic: 'waw boo hway shwaw jong-wun', en: "I don't speak Chinese" },
+      { zh: '我只会说一点中文', pinyin: 'wǒ zhǐ huì shuō yìdiǎn Zhōngwén', phonetic: 'waw jr hway shwaw ee-dyehn jong-wun', en: 'I only speak a little Chinese' },
+      { zh: '我不明白', pinyin: 'wǒ bù míngbai', phonetic: 'waw boo ming-bye', en: "I don't understand" },
+      { zh: '我听不懂', pinyin: 'wǒ tīng bu dǒng', phonetic: 'waw ting boo dong', en: "I can't understand what you said" },
+      { zh: '请帮我', pinyin: 'qǐng bāng wǒ', phonetic: 'ching bahng waw', en: 'Please help me' },
+      { zh: '这个怎么说？', pinyin: 'zhège zěnme shuō?', phonetic: 'juh-guh dzun-muh shwaw', en: 'How do you say this?', note: 'Point at the thing' },
+      { zh: '这是什么意思？', pinyin: 'zhè shì shénme yìsi?', phonetic: 'juh shr shun-muh ee-suh', en: 'What does this mean?', note: 'Point at the word' },
+      { zh: '我要去…', pinyin: 'wǒ yào qù …', phonetic: 'waw yow choo …', en: 'I want to go to…', note: 'Add a place name after 去' },
+      { zh: '怎么走？', pinyin: 'zěnme zǒu?', phonetic: 'dzun-muh dzoh', en: 'How do I get there?' },
+      { zh: '地铁站在哪儿？', pinyin: 'dìtiězhàn zài nǎr?', phonetic: 'dee-tyeh-jahn dzai nar', en: 'Where is the metro station?' },
+      { zh: '干杯', pinyin: 'gānbēi', phonetic: 'gahn-bay', en: 'Cheers!' },
+      { zh: '保重', pinyin: 'bǎozhòng', phonetic: 'baow-jong', en: 'Take care' },
+      { zh: '祝你好运', pinyin: 'zhù nǐ hǎoyùn', phonetic: 'joo nee how-yoon', en: 'Good luck' }
     ],
 
     restaurant: [

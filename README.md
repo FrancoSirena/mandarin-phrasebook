@@ -2,8 +2,8 @@
 
 A free, 100% static, single-page website that helps English-speaking travellers
 practise Mandarin before and during a trip to **Chengdu**, **Shangri-La
-(Diqing)**, and **Lijiang** — plus a bonus **Shenzhen / Huaqiangbei**
-tech-market category.
+(Diqing)**, and **Lijiang** — plus **Everyday Essentials** and a bonus
+**Shenzhen / Huaqiangbei** tech-market category.
 
 Every phrase has two actions:
 
@@ -19,9 +19,9 @@ processing happens in your browser using the Web Speech API.
 
 ## Features
 
-- **66 phrases** across six categories: Respectful Basics, At the Restaurant,
-  Chengdu / Sichuan, Shangri-La (Diqing), Lijiang (Naxi Cuisine), and Shenzhen
-  Tech Market (Huaqiangbei).
+- **87 phrases** across seven categories: Respectful Basics, Everyday
+  Essentials, At the Restaurant, Chengdu / Sichuan, Shangri-La (Diqing),
+  Lijiang (Naxi Cuisine), and Shenzhen Tech Market (Huaqiangbei).
 - **Speak** with automatic best-Chinese-voice selection (prefers `zh-CN` over
   `zh-TW`/`zh-HK`, re-resolves when voices load asynchronously), plus a **🔊
   Voice picker** so you can choose the least-robotic voice on your device.
@@ -49,11 +49,10 @@ processing happens in your browser using the Web Speech API.
   third-party network requests at runtime.
 - **Print-friendly** stylesheet (`@media print`) for exporting the phrase list.
 
-> **Note on the Shenzhen category.** The 21 Shenzhen / Huaqiangbei phrases were
-> added on request for a separate mini-PC-buying playbook and are **not** part
-> of the original verbatim dataset. They follow the same `{ zh, pinyin,
-> phonetic, en, note }` shape, but please have a native speaker review them
-> before relying on them.
+> **Note on the added categories.** The Shenzhen / Huaqiangbei and Everyday
+> Essentials phrases were added on request and are **not** part of the original
+> verbatim dataset. They follow the same `{ zh, pinyin, phonetic, en, note }`
+> shape, but please have a native speaker review them before relying on them.
 
 ### Screenshots
 
@@ -180,7 +179,7 @@ mandarin-phrasebook/
 │   ├── css/styles.css          # all styling, light/dark themes, print
 │   └── js/
 │       ├── app.js              # bootstrap, rendering, wiring (entry)
-│       ├── data.js             # CATEGORIES + PHRASES (66 phrases)
+│       ├── data.js             # CATEGORIES + PHRASES (87 phrases)
 │       ├── speech.js           # TTS wrapper (voice selection, speak/cancel)
 │       ├── practice.js         # online recognition wrapper + scoring
 │       └── offline.js          # local Whisper recognition wrapper
