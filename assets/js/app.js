@@ -2,8 +2,8 @@
  * Mandarin Travel Phrasebook — entry module.
  *
  * Bootstraps the page: renders categories/cards, wires the Speak and Practise
- * buttons, the live search filter, the speed slider, and the support
- * notices. This is the only module that touches the DOM.
+ * buttons, the live search filter, the speed slider, offline recognition, and
+ * the support notices. This is the only module that touches the DOM.
  */
 (function (global) {
   'use strict';
@@ -13,14 +13,17 @@
   var PHRASES = ns.PHRASES;
   var speech = ns.speech;
   var practice = ns.practice;
+  var offline = ns.offline;
 
   var SPEED_KEY = 'mtp.speed';
   var DEFAULT_SPEED = 0.8;
   var MIN_SPEED = 0.5;
   var MAX_SPEED = 1.0;
+  var OFFLINE_KEY = 'mtp.offline';
 
   var state = {
     speed: readSpeedPref(),
+    offline: readOfflinePref(),
     activePractice: null
   };
 
@@ -54,6 +57,14 @@
     try { localStorage.setItem(SPEED_KEY, String(value)); } catch (e) { /* private mode */ }
   }
 
+  function readOfflinePref() {
+    try { return localStorage.getItem(OFFLINE_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  function writeOfflinePref(value) {
+    try { localStorage.setItem(OFFLINE_KEY, value ? '1' : '0'); } catch (e) { /* private mode */ }
+  }
+
   /* ----------------------------- support notices ----------------------------- */
 
   function renderSupportNotices() {
@@ -64,8 +75,10 @@
     if (!speech.supported()) {
       notices.push('🔇 Text-to-speech is not available in this browser, so the Speak buttons are disabled. Try Chrome or Edge.');
     }
-    if (!practice.supported()) {
-      notices.push('🎤 Speech recognition is not available in this browser, so the Practise buttons are disabled. Use Chrome or Edge on desktop for the best results.');
+    if (!practice.supported() && !offline.supported()) {
+      notices.push('🎤 Speech recognition is not available in this browser, so the Practise buttons are disabled. Use Chrome, Edge, or Safari.');
+    } else if (!practice.supported()) {
+      notices.push('🎤 This browser has no online speech recognition, so Practise uses the local (offline) model. The first use downloads ~40 MB, then it works offline.');
     }
 
     container.hidden = notices.length === 0;
@@ -87,6 +100,13 @@
     btn.setAttribute('aria-pressed', String(listening));
     btn.classList.toggle('is-listening', listening);
     btn.textContent = listening ? '🎤 Listening…' : '🎤 Practise';
+  }
+
+  function setProcessing(btn, processing) {
+    btn.setAttribute('aria-pressed', 'false');
+    btn.classList.remove('is-listening');
+    btn.disabled = processing;
+    btn.textContent = processing ? '🎤 Processing…' : '🎤 Practise';
   }
 
   function resetOtherPracticeButtons(currentBtn) {
@@ -116,7 +136,13 @@
       case 'audio-capture':
         return 'No microphone was found. Connect a microphone and try again.';
       case 'network':
-        return "Speech recognition couldn't reach the browser's speech service. Chrome sends your audio to Google's servers, which are blocked in some regions and on non-https pages. Try Edge or Safari, use a VPN, and serve the page over https://.";
+        return "Speech recognition couldn't reach the browser's speech service. Switching to the local (offline) model.";
+      case 'insecure-context':
+        return 'The microphone needs a secure page. Use the https:// URL (or http://localhost) for offline recognition.';
+      case 'offline-unsupported':
+        return 'Local (offline) recognition is not supported in this browser. Use Chrome, Edge, or Safari.';
+      case 'transcribe-failed':
+        return 'Local recognition failed. If this is your first try, connect once to download the speech model (~40 MB); after that it works offline.';
       case 'unsupported':
         return 'Speech recognition is not supported in this browser. Use Chrome or Edge on desktop for the best results.';
       default:
@@ -182,40 +208,118 @@
 
   /* ----------------------------- practise flow ----------------------------- */
 
+  function resetBtn(practiceBtn) {
+    practiceBtn.disabled = false;
+    setListening(practiceBtn, false);
+  }
+
   function startPractice(phrase, practiceBtn, resultBox) {
     // Reset any other listening button immediately. (Their aborted onend also
     // fires, but this keeps the UI responsive.)
     resetOtherPracticeButtons(practiceBtn);
+    practiceBtn.disabled = false;
     setListening(practiceBtn, true);
     clearResult(resultBox);
 
-    var feedbackShown = false;
+    if (state.offline || !practice.supported()) {
+      startOffline(phrase, practiceBtn, resultBox);
+    } else {
+      startOnline(phrase, practiceBtn, resultBox);
+    }
+  }
+
+  function startOnline(phrase, practiceBtn, resultBox) {
+    var settled = false;
 
     var handle = practice.start({
       onStart: function () { /* button already in listening state */ },
       onResult: function (heard, alternatives) {
-        feedbackShown = true;
+        if (settled) return;
+        settled = true;
         renderResult(resultBox, phrase, heard, practice.score(phrase.zh, heard));
-        setListening(practiceBtn, false);
+        resetBtn(practiceBtn);
       },
       onError: function (err) {
-        feedbackShown = true;
-        renderError(resultBox, err && err.type);
-        setListening(practiceBtn, false);
+        if (settled) return;
+        var t = err && err.type;
+        if (t === 'network' || t === 'unsupported' || t === 'service-not-allowed') {
+          // Online service unreachable (e.g. Google blocked) → use local model.
+          settled = true;
+          setOfflinePreference(true);
+          startOffline(phrase, practiceBtn, resultBox);
+          return;
+        }
+        settled = true;
+        renderError(resultBox, t);
+        resetBtn(practiceBtn);
       },
       onEnd: function (info) {
-        setListening(practiceBtn, false);
-        // If recognition ended with no result and no error (e.g. the user
-        // tapped stop early), show the no-speech message instead of leaving
-        // the box stuck in "Listening…".
-        if (!info.aborted && !feedbackShown && !info.hadResult) {
-          renderNoSpeech(resultBox);
-        }
+        if (settled) return;
+        settled = true;
+        resetBtn(practiceBtn);
+        if (!info.aborted && !info.hadResult) renderNoSpeech(resultBox);
         if (state.activePractice === handle) state.activePractice = null;
       }
     });
 
     state.activePractice = handle;
+  }
+
+  function startOffline(phrase, practiceBtn, resultBox) {
+    var settled = false;
+
+    var handle = offline.start({
+      onStart: function () { /* button already in listening state */ },
+      onTranscribing: function () {
+        if (settled) return;
+        setProcessing(practiceBtn, true);
+        showResultBox(resultBox, 'warn');
+        var inner = resultBox.querySelector('.result-box__inner');
+        inner.replaceChildren();
+        var label = el('div', 'result-box__label');
+        label.textContent = '🎧 Transcribing locally… (first time downloads ~40 MB)';
+        inner.appendChild(label);
+      },
+      onProgress: function (fraction) {
+        if (settled) return;
+        if (typeof fraction === 'number') {
+          showResultBox(resultBox, 'warn');
+          var inner = resultBox.querySelector('.result-box__inner');
+          inner.replaceChildren();
+          var label = el('div', 'result-box__label');
+          label.textContent = '📥 Downloading speech model… ' + Math.round(fraction * 100) + '%';
+          inner.appendChild(label);
+        }
+      },
+      onResult: function (heard) {
+        if (settled) return;
+        settled = true;
+        renderResult(resultBox, phrase, heard, practice.score(phrase.zh, heard));
+        resetBtn(practiceBtn);
+      },
+      onError: function (err) {
+        if (settled) return;
+        settled = true;
+        renderError(resultBox, err && err.type);
+        resetBtn(practiceBtn);
+      },
+      onEnd: function (info) {
+        if (settled) return;
+        settled = true;
+        resetBtn(practiceBtn);
+        if (!info.aborted && !info.hadResult) renderNoSpeech(resultBox);
+        if (state.activePractice === handle) state.activePractice = null;
+      }
+    });
+
+    state.activePractice = handle;
+  }
+
+  function setOfflinePreference(value) {
+    state.offline = value;
+    writeOfflinePref(value);
+    var cb = document.getElementById('offline-toggle');
+    if (cb) cb.checked = value;
   }
 
   /* ----------------------------- card rendering ----------------------------- */
@@ -267,8 +371,8 @@
     practiceBtn.textContent = '🎤 Practise';
     practiceBtn.setAttribute('aria-label', 'Practise saying: ' + phrase.zh + ' (' + phrase.en + ')');
     practiceBtn.setAttribute('aria-pressed', 'false');
-    practiceBtn.disabled = !practice.supported();
-    if (!practice.supported()) practiceBtn.title = 'Speech recognition is not supported in this browser';
+    practiceBtn.disabled = !practice.supported() && !offline.supported();
+    if (practiceBtn.disabled) practiceBtn.title = 'Speech recognition is not supported in this browser';
 
     actions.appendChild(speakBtn);
     actions.appendChild(practiceBtn);
@@ -392,6 +496,17 @@
       writeSpeedPref(state.speed);
       speedValue.textContent = state.speed.toFixed(1) + '×';
     });
+
+    var offlineToggle = document.getElementById('offline-toggle');
+    offlineToggle.checked = state.offline;
+    offlineToggle.addEventListener('change', function () {
+      state.offline = offlineToggle.checked;
+      writeOfflinePref(state.offline);
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(function () { /* ignore */ });
+    }
   }
 
   if (document.readyState === 'loading') {

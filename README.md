@@ -30,6 +30,9 @@ processing happens in your browser using the Web Speech API.
   English-friendly pronunciation hint added on request.
 - **Practise** with live microphone transcription and an approximate
   character-overlap score (0–100) plus friendly feedback bands.
+- **📴 Offline recognition** — a local Whisper model that runs entirely in your
+  browser: no Google, no VPN, and it works offline after a one-time ~40 MB
+  download. It auto-falls back when the online engine is unreachable.
 - **Inline, non-blocking notices** when either speech API is unsupported —
   never an `alert()`.
 - **Live search** that filters all cards across categories by Chinese, pinyin,
@@ -117,30 +120,34 @@ directory is the repo root (`.`).
 
 ## Browser support
 
-| Browser                 | 🔊 Speak (TTS)                              | 🎤 Practise (recognition)                                   |
-| ----------------------- | ------------------------------------------- | ----------------------------------------------------------- |
-| Chrome / Edge (desktop) | ✅ Best — picks a Chinese voice              | ✅ Best results                                              |
-| Chrome / Edge (Android) | ✅                                          | ✅ (needs an internet connection)                            |
-| Safari (macOS / iOS)    | ✅ System voices (Chinese voice may vary)    | ⚠️ Partial — `webkitSpeechRecognition` on iOS 14.5+; may be unavailable/limited on some setups |
-| Firefox                 | ✅ (voice availability varies by OS)         | ❌ Not supported — Practise shows an inline notice           |
+| Browser                 | 🔊 Speak (TTS)                           | 🎤 Practise (online)                                | 🎤 Practise (offline, local)          |
+| ----------------------- | ---------------------------------------- | --------------------------------------------------- | ------------------------------------- |
+| Chrome / Edge (desktop) | ✅ Best — picks a Chinese voice           | ✅ Best (needs Google reachable)                     | ✅ (first use downloads ~40 MB)        |
+| Chrome / Edge (Android) | ✅                                       | ✅ (needs internet)                                  | ✅ (first use downloads ~40 MB)        |
+| Safari (macOS / iOS)    | ✅ System voices (Chinese voice may vary) | ⚠️ Partial — `webkitSpeechRecognition` on iOS 14.5+ | ✅ (first use downloads ~40 MB)        |
+| Firefox                 | ✅ (voice availability varies by OS)      | ❌ Not supported                                      | ✅ (local model)                       |
 
-The page feature-detects both APIs and degrades gracefully: if an API is
-missing, the matching buttons are disabled and a non-blocking notice explains
-that Chrome or Edge gives the best results. The Speak button stays usable
-wherever TTS is available.
+The page feature-detects everything and degrades gracefully. Practise uses the
+**online** engine when available, and automatically falls back to the **offline
+(local Whisper) engine** when it's not (e.g. in mainland China, or offline).
+The Speak button stays usable wherever TTS is available.
 
 ---
 
 ## No API keys needed
 
-This site uses only the **Web Speech API**, which is built into the browser:
+This site uses only free, in-browser speech technology:
 
 - `window.speechSynthesis` for text-to-speech.
-- `window.SpeechRecognition` (or `webkitSpeechRecognition`) for transcription.
+- `window.SpeechRecognition` (or `webkitSpeechRecognition`) for online
+  transcription.
+- **Whisper** (via `@huggingface/transformers`) running locally in the browser
+  for the offline engine. The ~40 MB model is downloaded once from Hugging Face
+  and cached, then recognition works offline.
 
-There are no Google Cloud, Azure, or OpenAI keys, no server, no analytics, no
-cookies, and no third-party network requests at runtime. It is free to host
-anywhere that serves static files.
+There are no Google Cloud, Azure, or OpenAI keys, no server, no analytics, and
+no cookies. The site loads with zero third-party requests; the offline engine
+only downloads its library + model the first time you use it.
 
 ---
 
@@ -172,7 +179,9 @@ mandarin-phrasebook/
 │       ├── app.js              # bootstrap, rendering, wiring (entry)
 │       ├── data.js             # CATEGORIES + PHRASES (66 phrases)
 │       ├── speech.js           # TTS wrapper (voice selection, speak/cancel)
-│       └── practice.js         # recognition wrapper + scoring
+│       ├── practice.js         # online recognition wrapper + scoring
+│       └── offline.js          # local Whisper recognition wrapper
+├── sw.js                       # service worker (offline caching)
 ├── .github/workflows/deploy.yml
 ├── .gitignore
 ├── LICENSE                     # MIT
@@ -201,8 +210,10 @@ mandarin-phrasebook/
 - **One recognition at a time.** Starting a new card's Practise aborts any
   running recognition; `onend` is the single cleanup path that deletes the
   recogniser from the active map and resets the button.
-- **System font stack only.** No external fonts, so the site makes zero
-  third-party network requests and works offline (except recognition).
+- **System font stack only.** No external fonts. The site loads with zero
+  third-party requests; the offline engine lazily downloads transformers.js +
+  the Whisper model on first use, then caches them (service worker + Cache API)
+  so recognition works offline after that.
 - **No `console.log`** in shipped code; genuine errors are surfaced through the
   inline result boxes instead.
 
@@ -213,9 +224,14 @@ mandarin-phrasebook/
   available (`webkitSpeechRecognition` on iOS 14.5+) and may fail silently or
   require a network connection; the site degrades to a friendly notice rather
   than crashing.
-- **Offline recognition.** `SpeechRecognition` sends audio to the browser
-  vendor's servers in most browsers, so Practise needs an internet connection.
-  Text-to-speech does not.
+- **Offline engine size & first run.** The local Whisper model is ~40 MB and
+  downloads the first time you use offline Practise; transcription is slower
+  than the online engine (a few seconds on WASM).
+- **Offline accuracy.** `whisper-tiny` is small, so it may mis-hear rare words
+  or names (e.g. "Nixi", "Guoben"). The score remains a rough guide.
+- **Online recognition.** `SpeechRecognition` sends audio to the browser
+  vendor's servers, so online Practise needs an internet connection (and Google
+  reachable for Chrome). Text-to-speech does not.
 - **Tone-blind scoring.** The multiset character overlap does not evaluate
   tones, so it can't tell `mā` from `mà`. Use Speak to model tones.
 - **Voice list timing.** Chrome loads voices asynchronously; the site

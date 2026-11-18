@@ -31,6 +31,10 @@
         <input type="range" id="speed-slider" min="0.5" max="1" step="0.05" value="0.8" aria-label="Speaking speed">
         <output id="speed-value" for="speed-slider">0.8×</output>
       </label>
+      <label class="mode-toggle" title="Use local speech recognition (Whisper) instead of the browser's online service. First use downloads ~40 MB, then it works offline.">
+        <input type="checkbox" id="offline-toggle">
+        <span>📴 Offline</span>
+      </label>
     </div>
 
     <main>
@@ -51,6 +55,7 @@
   <script src="assets/js/data.js"></script>
   <script src="assets/js/speech.js"></script>
   <script src="assets/js/practice.js"></script>
+  <script src="assets/js/offline.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>
