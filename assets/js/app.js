@@ -558,6 +558,17 @@
     select.disabled = voices.length === 0;
   }
 
+  function renderVoiceNotice() {
+    var el = document.getElementById('voice-notice');
+    if (!el) return;
+    if (speech.supported() && speech.getChineseVoices().length === 0) {
+      el.hidden = false;
+      el.textContent = '🔇 No Chinese voice found on this device, so Speak is silent. On iPhone: Settings → Accessibility → Spoken Content → Voices → Chinese → download Ting-Ting (or Meijia), then reload.';
+    } else {
+      el.hidden = true;
+    }
+  }
+
   /* ----------------------------- bootstrap ----------------------------- */
 
   function init() {
@@ -589,7 +600,13 @@
 
     speech.setPreferredVoiceName(readVoicePref());
     populateVoicePicker();
-    speech.onVoicesChanged(populateVoicePicker);
+    renderVoiceNotice();
+    speech.onVoicesChanged(function () {
+      populateVoicePicker();
+      renderVoiceNotice();
+    });
+    // Some iOS versions never fire voiceschanged; re-check shortly after load.
+    setTimeout(renderVoiceNotice, 2500);
 
     var voicePicker = document.getElementById('voice-picker');
     voicePicker.addEventListener('change', function () {
