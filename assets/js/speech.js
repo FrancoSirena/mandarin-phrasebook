@@ -19,6 +19,10 @@
   var preferredVoiceName = null;
   var initialized = false;
   var voiceListeners = [];
+  // Strong reference to the in-flight utterance. Safari (macOS + iOS) garbage-
+  // collects a SpeechSynthesisUtterance that has no live reference, which makes
+  // speech silently never start. Keeping it here prevents that.
+  var activeUtterance = null;
 
   // Voice names/keywords that tend to mark higher-quality (neural/natural)
   // Chinese voices across macOS, Windows, ChromeOS and Android.
@@ -99,6 +103,21 @@
     } else {
       synth.onvoiceschanged = notifyVoices;
     }
+
+    // iOS warm-up: while the voice list is still empty, speak a silent
+    // zero-length utterance. This wakes the engine so the user's first real
+    // phrase isn't swallowed, and it nudges iOS to fire `voiceschanged`.
+    try {
+      if (getVoices().length === 0) {
+        var warm = new SpeechSynthesisUtterance(' ');
+        warm.volume = 0;
+        activeUtterance = warm;
+        warm.onend = function () { if (activeUtterance === warm) activeUtterance = null; };
+        warm.onerror = function () { if (activeUtterance === warm) activeUtterance = null; };
+        synth.speak(warm);
+      }
+    } catch (e) { /* ignore */ }
+
     return true;
   }
 
@@ -134,9 +153,20 @@
   }
 
   /**
-   * Speak `text` in Chinese. Cancels any in-flight utterance first.
+   * Speak `text` in Chinese.
    *
    * options: { rate, onStart, onEnd, onError }
+   *
+   * Works around the iOS Safari speechSynthesis quirks that otherwise leave the
+   * Speak button silent:
+   *   1. Safari GCs an utterance with no strong reference → we keep it in
+   *      `activeUtterance` until it finishes.
+   *   2. A needless cancel() right before speak() (even with nothing playing)
+   *      can drop the new utterance on iOS → we only cancel when there is
+   *      actually something in flight.
+   *   3. The first utterance of a session is sometimes swallowed and the synth
+   *      can start "paused" → we resume (immediately + again shortly after) and
+   *      retry a few times if it never starts.
    */
   function speak(text, options) {
     if (!supported()) {
@@ -146,14 +176,18 @@
 
     var opts = options || {};
     var rate = typeof opts.rate === 'number' ? opts.rate : 0.85;
+    var synth = window.speechSynthesis;
 
-    cancel();
+    if (synth.speaking || synth.pending) {
+      cancel();
+    }
     resume();
 
     var started = false;
     var settled = false;
     var attempts = 0;
     var watchdog = null;
+    var resumeTimer = null;
 
     function clearWatchdog() {
       if (watchdog) { clearTimeout(watchdog); watchdog = null; }
@@ -163,6 +197,7 @@
       if (settled) return;
       settled = true;
       clearWatchdog();
+      if (resumeTimer) { clearTimeout(resumeTimer); resumeTimer = null; }
       if (err) { if (opts.onError) opts.onError(err); }
       else { if (opts.onEnd) opts.onEnd(); }
     }
@@ -170,35 +205,53 @@
     function attempt() {
       attempts += 1;
       var utterance = buildUtterance(text, rate);
+      activeUtterance = utterance;
 
       utterance.onstart = function () {
         started = true;
         clearWatchdog();
         if (opts.onStart) opts.onStart();
       };
-      utterance.onend = function () { finish(null); };
-      utterance.onerror = function (event) { finish(event); };
+      utterance.onend = function () {
+        if (activeUtterance !== utterance) return; // superseded by a retry
+        activeUtterance = null;
+        finish(null);
+      };
+      utterance.onerror = function (event) {
+        if (activeUtterance !== utterance) return; // superseded by a retry
+        activeUtterance = null;
+        finish(event);
+      };
 
       try {
-        window.speechSynthesis.speak(utterance);
+        synth.speak(utterance);
         resume(); // iOS sometimes starts in a paused state
       } catch (e) {
+        if (activeUtterance === utterance) activeUtterance = null;
         finish(e);
         return;
       }
 
+      // iOS can slip back into "paused" shortly after speak(); nudge it again.
+      if (resumeTimer) clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(function () {
+        resumeTimer = null;
+        if (!settled) resume();
+      }, 250);
+
       clearWatchdog();
-      // If the utterance never starts (a known WebKit/iOS quirk), retry once.
+      // If it never starts (a known WebKit/iOS quirk), retry a few times.
       watchdog = setTimeout(function () {
         if (settled || started) return;
-        if (attempts < 2) {
+        if (attempts < 3) {
           cancel();
           resume();
           attempt();
         } else {
+          if (activeUtterance === utterance) activeUtterance = null;
           finish(new Error('TTS did not start'));
         }
-      }, 900);
+      }, 1100);
     }
 
     attempt();

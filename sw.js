@@ -6,7 +6,7 @@
  * transformers.js library. Hugging Face model files are left to
  * transformers.js's own browser cache, which already supports offline reuse.
  */
-const CACHE = 'mtp-cache-v1';
+const CACHE = 'mtp-cache-v2';
 const PRECACHE = [
   './',
   './index.html',
