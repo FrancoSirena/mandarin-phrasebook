@@ -23,6 +23,9 @@
   // collects a SpeechSynthesisUtterance that has no live reference, which makes
   // speech silently never start. Keeping it here prevents that.
   var activeUtterance = null;
+  // Reused <audio> element for pre-generated phrase audio (works on iOS where
+  // speechSynthesis is broken).
+  var audioEl = null;
 
   // Voice names/keywords that tend to mark higher-quality (neural/natural)
   // Chinese voices across macOS, Windows, ChromeOS and Android.
@@ -34,6 +37,12 @@
 
   function supported() {
     return typeof window !== 'undefined' && 'speechSynthesis' in window;
+  }
+
+  // Pre-generated audio path for a phrase (from the auto-generated AUDIO map).
+  function audioPathFor(text) {
+    var map = global.Phrasebook && global.Phrasebook.AUDIO;
+    return map ? (map[text] || null) : null;
   }
 
   function getVoices() {
@@ -153,12 +162,77 @@
   }
 
   /**
-   * Speak `text` in Chinese.
+   * Play pre-generated phrase audio through an <audio> element — the same
+   * mechanism as the "Hear what you said" replay, which is known to work on
+   * iPhone. On failure (e.g. a missing file), falls back to speechSynthesis.
+   */
+  function speakAudio(src, text, opts) {
+    if (audioEl) { try { audioEl.pause(); } catch (e) { /* ignore */ } }
+    if (supported()) cancel(); // stop any in-flight synth speech
+
+    var el = new Audio(src);
+    audioEl = el;
+
+    if (typeof opts.rate === 'number') {
+      try { el.playbackRate = Math.min(1.25, Math.max(0.5, opts.rate)); } catch (e) { /* ignore */ }
+    }
+
+    var started = false;
+    var ended = false;
+
+    el.addEventListener('playing', function () {
+      if (started) return;
+      started = true;
+      if (opts.onStart) opts.onStart();
+    });
+    el.addEventListener('ended', function () {
+      if (ended) return;
+      ended = true;
+      if (opts.onEnd) opts.onEnd();
+    });
+    el.addEventListener('error', function () {
+      if (ended) return;
+      ended = true;
+      if (supported()) { speakSynth(text, opts); }
+      else if (opts.onError) opts.onError(new Error('Audio playback failed'));
+    });
+
+    var p = el.play();
+    if (p && typeof p.then === 'function') {
+      p.then(function () {
+        if (!started) { started = true; if (opts.onStart) opts.onStart(); }
+      }).catch(function (err) {
+        if (ended) return;
+        ended = true;
+        if (supported()) { speakSynth(text, opts); }
+        else if (opts.onError) opts.onError(err);
+      });
+    }
+    return el;
+  }
+
+  /**
+   * Speak `text` in Chinese. Prefers pre-generated audio (reliable on iOS);
+   * falls back to speechSynthesis when no audio file exists.
+   *
+   * options: { rate, onStart, onEnd, onError }
+   */
+  function speak(text, options) {
+    var opts = options || {};
+    var src = audioPathFor(text);
+    if (src) return speakAudio(src, text, opts);
+    if (supported()) return speakSynth(text, opts);
+    if (opts.onError) opts.onError(new Error('TTS not supported'));
+    return null;
+  }
+
+  /**
+   * speechSynthesis-based fallback (for browsers without pre-generated audio,
+   * or when an audio file is missing).
    *
    * options: { rate, onStart, onEnd, onError }
    *
-   * Works around the iOS Safari speechSynthesis quirks that otherwise leave the
-   * Speak button silent:
+   * Works around the iOS Safari speechSynthesis quirks:
    *   1. Safari GCs an utterance with no strong reference → we keep it in
    *      `activeUtterance` until it finishes.
    *   2. A needless cancel() right before speak() (even with nothing playing)
@@ -168,7 +242,7 @@
    *      can start "paused" → we resume (immediately + again shortly after) and
    *      retry a few times if it never starts.
    */
-  function speak(text, options) {
+  function speakSynth(text, options) {
     if (!supported()) {
       if (options && options.onError) options.onError(new Error('TTS not supported'));
       return null;

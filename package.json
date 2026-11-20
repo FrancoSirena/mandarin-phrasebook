@@ -4,7 +4,8 @@
   "private": true,
   "description": "A free, 100% static Mandarin travel phrasebook with in-browser text-to-speech and speech-recognition practice for Chengdu, Shangri-La, and Lijiang.",
   "scripts": {
-    "serve": "npx --yes serve ."
+    "serve": "npx --yes serve .",
+    "generate-audio": "node scripts/generate-audio.js"
   },
   "license": "MIT"
 }

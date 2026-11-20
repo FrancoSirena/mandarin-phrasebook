@@ -7,25 +7,27 @@ and a bonus **Shenzhen / Huaqiangbei** tech-market category.
 
 Every phrase has two actions:
 
-- **🔊 Speak** — reads the Chinese aloud with the browser's built-in
-  text-to-speech (`zh-CN`, with an adjustable 🐢 speed slider from 0.5× to 1.0×).
+- **🔊 Speak** — plays a pre-recorded Chinese audio clip for each phrase (so it
+  works on every device, including iPhone, with no dependence on the browser's
+  text-to-speech), with an adjustable 🐢 speed slider from 0.5× to 1.0×.
 - **🎤 Practise** — records your voice via the microphone, transcribes what you
   said, and scores how close you were to the target phrase.
 
-There is **no backend, no build step, and no paid API key**. All speech
-processing happens in your browser using the Web Speech API.
+There is **no backend, no build step, and no paid API key**. Speak uses bundled
+audio files; Practise uses the Web Speech API (or a local Whisper model).
 
 ---
 
 ## Features
 
-- **109 phrases** across eight categories: Respectful Basics, Everyday
+- **119 phrases** across eight categories: Respectful Basics, Everyday
   Essentials, At the Restaurant, Hotel Check-in, Chengdu / Sichuan,
   Shangri-La (Diqing), Lijiang (Naxi Cuisine), and Shenzhen Tech Market
   (Huaqiangbei).
-- **Speak** with automatic best-Chinese-voice selection (prefers `zh-CN` over
-  `zh-TW`/`zh-HK`, re-resolves when voices load asynchronously), plus a **🔊
-  Voice picker** so you can choose the least-robotic voice on your device.
+- **Speak** plays a **pre-recorded native-Chinese audio file** for every phrase
+  — no browser text-to-speech needed, so it's reliable on iOS and works
+  offline. A **🔊 Voice picker** (used only as a fallback when a file is
+  missing) lets you choose the least-robotic system voice on your device.
 - **🐢 Speed slider** (0.5×–1.0×, default 0.8×) to slow the speech down to your
   pace — persisted in `localStorage`.
 - **"Sounds like" phonetic line** under each pinyin (e.g. 你好 → _nee how_), an
@@ -80,8 +82,8 @@ Open `index.html` directly in your browser (double-click it, or
 with relative asset paths, everything renders from `file://`.
 
 > ⚠️ Speech recognition still needs an internet connection and a browser that
-> supports the Web Speech API (Chrome/Edge). Text-to-speech works offline once
-> the browser has its system voices.
+> supports the Web Speech API (Chrome/Edge). The Speak button plays bundled
+> audio files, so it works offline (and on iPhone) without any system voices.
 
 ### Option 2 — local static server (recommended for testing mic features)
 
@@ -128,17 +130,19 @@ directory is the repo root (`.`).
 
 ## Browser support
 
-| Browser                 | 🔊 Speak (TTS)                           | 🎤 Practise (online)                                | 🎤 Practise (offline, local)          |
-| ----------------------- | ---------------------------------------- | --------------------------------------------------- | ------------------------------------- |
-| Chrome / Edge (desktop) | ✅ Best — picks a Chinese voice           | ✅ Best (needs Google reachable)                     | ✅ (first use downloads ~40 MB)        |
-| Chrome / Edge (Android) | ✅                                       | ✅ (needs internet)                                  | ✅ (first use downloads ~40 MB)        |
-| Safari (macOS / iOS)    | ✅ System voices (Chinese voice may vary) | ⚠️ Partial — `webkitSpeechRecognition` on iOS 14.5+ | ✅ (first use downloads ~40 MB)        |
-| Firefox                 | ✅ (voice availability varies by OS)      | ❌ Not supported                                      | ✅ (local model)                       |
+| Browser                 | 🔊 Speak                            | 🎤 Practise (online)                                | 🎤 Practise (offline, local)          |
+| ----------------------- | ----------------------------------- | --------------------------------------------------- | ------------------------------------- |
+| Chrome / Edge (desktop) | ✅ Pre-recorded audio               | ✅ Best (needs Google reachable)                     | ✅ (first use downloads ~40 MB)        |
+| Chrome / Edge (Android) | ✅ Pre-recorded audio               | ✅ (needs internet)                                  | ✅ (first use downloads ~40 MB)        |
+| Safari (macOS / iOS)    | ✅ Pre-recorded audio (works!)      | ⚠️ Partial — `webkitSpeechRecognition` on iOS 14.5+ | ✅ (first use downloads ~40 MB)        |
+| Firefox                 | ✅ Pre-recorded audio               | ❌ Not supported                                      | ✅ (local model)                       |
 
 The page feature-detects everything and degrades gracefully. Practise uses the
 **online** engine when available, and automatically falls back to the **offline
 (local Whisper) engine** when it's not (e.g. in mainland China, or offline).
-The Speak button stays usable wherever TTS is available.
+Speak plays bundled audio files, so it works everywhere (including iPhone) and
+offline; it only falls back to the browser's `speechSynthesis` if a file is
+missing.
 
 ---
 
@@ -146,7 +150,9 @@ The Speak button stays usable wherever TTS is available.
 
 This site uses only free, in-browser speech technology:
 
-- `window.speechSynthesis` for text-to-speech.
+- **Bundled audio files** (`.m4a`, generated once with a native Chinese voice)
+  for the Speak button — no API, no network call.
+- `window.speechSynthesis` as a text-to-speech fallback only.
 - `window.SpeechRecognition` (or `webkitSpeechRecognition`) for online
   transcription.
 - **Whisper** (via `@huggingface/transformers`) running locally in the browser
@@ -183,12 +189,15 @@ mandarin-phrasebook/
 ├── index.html                  # single page shell + relative asset links
 ├── assets/
 │   ├── css/styles.css          # all styling, light/dark themes, print
+│   ├── audio/                  # pre-generated phrase audio (.m4a) + manifest.json
 │   └── js/
 │       ├── app.js              # bootstrap, rendering, wiring (entry)
-│       ├── data.js             # CATEGORIES + PHRASES (109 phrases)
-│       ├── speech.js           # TTS wrapper (voice selection, speak/cancel)
+│       ├── data.js             # CATEGORIES + PHRASES (119 phrases)
+│       ├── audio-map.js        # AUTO-GENERATED zh -> audio file lookup
+│       ├── speech.js           # Speak: bundled audio + speechSynthesis fallback
 │       ├── practice.js         # online recognition wrapper + scoring
 │       └── offline.js          # local Whisper recognition wrapper
+├── scripts/generate-audio.js   # regenerates assets/audio + audio-map.js
 ├── sw.js                       # service worker (offline caching)
 ├── netlify.toml                # Netlify config (no build, publish root)
 ├── .gitignore
@@ -207,6 +216,11 @@ mandarin-phrasebook/
   four JS files are classic scripts that attach to a single `window.Phrasebook`
   namespace, loaded in dependency order. The code is still modular — one
   concern per file — with a single global.
+- **Pre-generated audio for Speak.** iOS Safari's `speechSynthesis` is
+  unreliable (utterances can be garbage-collected or silently fail), so every
+  phrase ships with a bundled `.m4a` clip played through a plain `<audio>`
+  element — the same mechanism as the "hear what you said" replay. Regenerate
+  with `node scripts/generate-audio.js` after editing `data.js`.
 - **`speech.js` / `practice.js` are DOM-free.** They only manage API state and
   take callbacks, so `app.js` is the only file that touches the DOM.
 - **All user-derived text uses `textContent`.** Microphone transcripts are
@@ -227,11 +241,11 @@ mandarin-phrasebook/
 
 ## Known limitations
 
-- **Mobile Safari (iOS).** Text-to-speech works but Chinese voice availability
-  and quality vary by device/region. Speech recognition is only partially
-  available (`webkitSpeechRecognition` on iOS 14.5+) and may fail silently or
-  require a network connection; the site degrades to a friendly notice rather
-  than crashing.
+- **Mobile Safari (iOS).** Speak uses bundled audio (so it works reliably), and
+  the old reliance on `speechSynthesis` is now only a fallback. Speech
+  recognition is only partially available (`webkitSpeechRecognition` on iOS
+  14.5+) and may fail silently or require a network connection; the site
+  degrades to a friendly notice rather than crashing.
 - **Offline engine size & first run.** The local Whisper model is ~40 MB and
   downloads the first time you use offline Practise; transcription is slower
   than the online engine (a few seconds on WASM).

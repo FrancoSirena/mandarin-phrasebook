@@ -6,7 +6,7 @@
  * transformers.js library. Hugging Face model files are left to
  * transformers.js's own browser cache, which already supports offline reuse.
  */
-const CACHE = 'mtp-cache-v2';
+const CACHE = 'mtp-cache-v3';
 const PRECACHE = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const PRECACHE = [
   './assets/js/speech.js',
   './assets/js/practice.js',
   './assets/js/offline.js',
+  './assets/js/audio-map.js',
   './assets/js/app.js'
 ];
 const LIBRARY_HOSTS = ['cdn.jsdelivr.net'];
@@ -23,6 +24,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
       .then((c) => c.addAll(PRECACHE))
+      // Precache every pre-generated phrase audio file (listed in manifest.json)
+      // so the Speak button also works fully offline.
+      .then(() => fetch('./assets/audio/manifest.json').then((r) => r.json()))
+      .then((files) => caches.open(CACHE).then((c) => c.addAll(files)))
       .then(() => self.skipWaiting())
   );
 });
