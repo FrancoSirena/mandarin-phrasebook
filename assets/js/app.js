@@ -15,8 +15,8 @@
   var practice = ns.practice;
   var offline = ns.offline;
 
-  var SPEED_KEY = 'mtp.speed';
-  var DEFAULT_SPEED = 0.8;
+  var SPEED_KEY = 'mtp.speed.v2'; // v2: audio is now recorded slower, so default is 1.0×
+  var DEFAULT_SPEED = 1.0;
   var MIN_SPEED = 0.5;
   var MAX_SPEED = 1.0;
   var OFFLINE_KEY = 'mtp.offline';

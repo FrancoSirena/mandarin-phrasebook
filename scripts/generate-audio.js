@@ -25,6 +25,11 @@ const ROOT = path.resolve(__dirname, '..');
 const DATA_JS = path.join(ROOT, 'assets', 'js', 'data.js');
 const AUDIO_DIR = path.join(ROOT, 'assets', 'audio');
 const VOICE = process.env.MTP_VOICE || 'Sandy (Chinese (China mainland))';
+// Speaking rate in words per minute. The macOS default (~175) is too fast for
+// language learners, so we record slower (~135) — slower cadence with natural
+// pitch (unlike an <audio> playbackRate slowdown, which drops the pitch).
+const RATE = process.env.MTP_RATE || '135';
+const FORCE = process.argv.includes('--force') || process.env.MTP_FORCE === '1';
 
 function loadPhrasebook() {
   const code = fs.readFileSync(DATA_JS, 'utf8');
@@ -69,8 +74,8 @@ function main() {
     const rel = 'assets/audio/' + fname;
     const abs = path.join(AUDIO_DIR, fname);
 
-    if (!fs.existsSync(abs)) {
-      execFileSync('say', ['-v', VOICE, '-o', tmp, clean], { stdio: 'ignore' });
+    if (FORCE || !fs.existsSync(abs)) {
+      execFileSync('say', ['-v', VOICE, '-r', RATE, '-o', tmp, clean], { stdio: 'ignore' });
       execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', tmp, abs], { stdio: 'ignore' });
     }
 

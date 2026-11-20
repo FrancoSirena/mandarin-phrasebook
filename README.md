@@ -28,8 +28,9 @@ audio files; Practise uses the Web Speech API (or a local Whisper model).
   — no browser text-to-speech needed, so it's reliable on iOS and works
   offline. A **🔊 Voice picker** (used only as a fallback when a file is
   missing) lets you choose the least-robotic system voice on your device.
-- **🐢 Speed slider** (0.5×–1.0×, default 0.8×) to slow the speech down to your
-  pace — persisted in `localStorage`.
+- **🐢 Speed slider** (0.5×–1.0×, default 1.0×) to slow the speech further to
+  your pace — persisted in `localStorage`. The audio is already recorded at a
+  slower, learner-friendly pace.
 - **"Sounds like" phonetic line** under each pinyin (e.g. 你好 → _nee how_), an
   English-friendly pronunciation hint added on request.
 - **Practise** with live microphone transcription and an approximate
