@@ -2,10 +2,19 @@
 .DS_Store
 Thumbs.db
 
-# Node (only used for the optional local dev server)
-node_modules/
+# dependencies
+/node_modules
+
+# Next.js build output
+/.next/
+/out/
+
+# misc
 npm-debug.log*
 yarn-error.log*
+*.log
+.env*
+.vercel
 
 # Local editor settings
 .vscode/

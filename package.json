@@ -1,11 +1,17 @@
 {
   "name": "mandarin-phrasebook",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "A free, 100% static Mandarin travel phrasebook with in-browser text-to-speech and speech-recognition practice for Chengdu, Shangri-La, and Lijiang.",
+  "description": "Mandarin Travel Phrasebook — a Next.js app with server-stored, high-quality Chinese audio for every phrase.",
   "scripts": {
-    "serve": "npx --yes serve .",
-    "generate-audio": "node scripts/generate-audio.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "generate-audio": "node scripts/generate-audio.mjs"
   },
-  "license": "MIT"
+  "dependencies": {
+    "next": "^14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
 }
