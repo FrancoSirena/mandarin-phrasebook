@@ -214,6 +214,37 @@ body {
   outline-offset: 2px;
 }
 
+.speed-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.speed-toggle button {
+  font: inherit;
+  font-size: 0.9rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.speed-toggle button.active {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.speed-toggle button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .mode-toggle {
   display: inline-flex;
   align-items: center;

@@ -10,7 +10,7 @@ Every phrase has two actions:
 - **🔊 Speak** — plays a high-quality, pre-recorded Chinese clip for each phrase.
   Audio is generated once from native macOS voices, stored on the server, and
   served as static files. You can switch between **four voices** (including a
-  male voice) and adjust the 🐢 speed slider (0.5×–1.0×).
+  male voice) and switch between a **🐇 Normal** and **🐢 Slow** speed.
 - **🎤 Practise** — records your voice via the microphone, transcribes what you
   said, and scores how close you were to the target phrase.
 
@@ -31,8 +31,10 @@ Web Speech API (or a local Whisper model).
   identically on every device, including iPhone.
 - **🔊 Voice picker** with four voices: Sandy, Shelley, Ting-Ting (default), and
   Eddy (male).
-- **🐢 Speed slider** (0.5×–1.0×, default 1.0×) to slow the speech further to
-  your pace — persisted in `localStorage`.
+- **🐇 Normal / 🐢 Slow** speed toggle. Each phrase is recorded at two natural
+  speeds (135 and 100 wpm), so the Slow mode keeps natural pitch instead of the
+  robotic pitch-drop you get from a simple playback slowdown. Persisted in
+  `localStorage`.
 - **"Sounds like" phonetic line** under each pinyin (e.g. 你好 → _nee how_).
 - **Practise** with live microphone transcription and an approximate
   character-overlap score (0–100) plus friendly feedback bands.
@@ -79,7 +81,7 @@ npm run generate-audio -- --force
 The voice list lives in `scripts/generate-audio.mjs` (the `VOICES` array). Add
 or remove entries there and rerun. It writes:
 
-- `public/audio/<voice>/<hash>.m4a` — one AAC clip per phrase per voice
+- `public/audio/<voice>/<speed>/<hash>.m4a` — one AAC clip per phrase/voice/speed
 - `lib/audio-map.js` — the `VOICES` list + `zh → filename` lookup
 
 > **Note:** there is no macOS voice named "Yu-shu" on this MacBook; the
@@ -156,7 +158,7 @@ mandarin-phrasebook/
 │   ├── data.js                 # CATEGORIES + PHRASES (119 phrases)
 │   └── audio-map.js            # AUTO-GENERATED: VOICES + zh → filename
 ├── public/
-│   ├── audio/<voice>/<hash>.m4a  # pre-recorded phrase audio (server-stored)
+│   ├── audio/<voice>/<speed>/<hash>.m4a  # pre-recorded phrase audio (server-stored)
 │   └── js/
 │       ├── practice.js         # online recognition wrapper + scoring
 │       └── offline.js          # local Whisper recognition wrapper

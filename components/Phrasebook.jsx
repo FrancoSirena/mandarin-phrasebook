@@ -2,17 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORIES, PHRASES } from '@/lib/data';
-import { VOICES, AUDIO } from '@/lib/audio-map';
+import { VOICES, SPEED_MODES, AUDIO } from '@/lib/audio-map';
 
-const SPEED_KEY = 'mtp.speed.v3';
+const SPEED_KEY = 'mtp.speedMode';
 const OFFLINE_KEY = 'mtp.offline';
 const VOICE_KEY = 'mtp.voice.v2';
 
 const DEFAULT_VOICE = (VOICES.find((v) => v.default) || VOICES[0]).id;
-
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
-}
 
 function read(key, fallback) {
   try {
@@ -62,13 +58,9 @@ function describeError(type) {
 }
 
 export default function Phrasebook() {
-  const [speed, setSpeed] = useState(() => {
-    try {
-      const v = parseFloat(window.localStorage.getItem(SPEED_KEY));
-      return isFinite(v) ? clamp(v, 0.5, 1) : 1.0;
-    } catch {
-      return 1.0;
-    }
+  const [mode, setMode] = useState(() => {
+    const v = read(SPEED_KEY, 'normal');
+    return SPEED_MODES.some((m) => m.id === v) ? v : 'normal';
   });
   const [voice, setVoice] = useState(() => read(VOICE_KEY, DEFAULT_VOICE));
   const [offline, setOffline] = useState(() => read(OFFLINE_KEY, '0') === '1');
@@ -84,8 +76,8 @@ export default function Phrasebook() {
 
   // Persist preferences.
   useEffect(() => {
-    try { window.localStorage.setItem(SPEED_KEY, String(speed)); } catch {}
-  }, [speed]);
+    try { window.localStorage.setItem(SPEED_KEY, mode); } catch {}
+  }, [mode]);
   useEffect(() => {
     try { window.localStorage.setItem(VOICE_KEY, voice); } catch {}
   }, [voice]);
@@ -157,7 +149,7 @@ export default function Phrasebook() {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(phrase.zh);
     u.lang = 'zh-CN';
-    u.rate = speed;
+    u.rate = mode === 'slow' ? 0.75 : 1;
     const zh = window.speechSynthesis.getVoices().filter((v) => (v.lang || '').toLowerCase().replace('_', '-').startsWith('zh'));
     if (zh.length) u.voice = zh[0];
     window.speechSynthesis.speak(u);
@@ -173,9 +165,8 @@ export default function Phrasebook() {
     if (audioRef.current) {
       try { audioRef.current.pause(); } catch {}
     }
-    const el = new Audio('/audio/' + voice + '/' + filename);
+    const el = new Audio('/audio/' + voice + '/' + mode + '/' + filename);
     audioRef.current = el;
-    try { el.playbackRate = clamp(speed, 0.5, 1.25); } catch {}
 
     setSpeakingKey(key);
     el.onplaying = () => setSpeakingKey(key);
@@ -355,20 +346,22 @@ export default function Phrasebook() {
           />
         </label>
 
-        <label className="speed-control">
-          <span className="speed-control__label">🐢 Speed</span>
-          <input
-            id="speed-slider"
-            type="range"
-            min="0.5"
-            max="1"
-            step="0.05"
-            value={speed}
-            aria-label="Speaking speed"
-            onChange={(e) => setSpeed(clamp(parseFloat(e.target.value), 0.5, 1))}
-          />
-          <output htmlFor="speed-slider">{speed.toFixed(1)}×</output>
-        </label>
+        <div className="speed-control" role="group" aria-label="Pronunciation speed">
+          <span className="speed-control__label">🔉 Speed</span>
+          <div className="speed-toggle">
+            {SPEED_MODES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={mode === m.id ? 'active' : ''}
+                aria-pressed={mode === m.id}
+                onClick={() => setMode(m.id)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <label className="mode-toggle" title="Use local speech recognition (Whisper) instead of the browser's online service. First use downloads ~40 MB, then it works offline.">
           <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} />
